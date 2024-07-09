@@ -23,8 +23,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longUR;
-  res.redirect(`/url/${shortURL}`);
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get('/', (req, res) => {
