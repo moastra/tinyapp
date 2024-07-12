@@ -1,33 +1,36 @@
 const express = require('express');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const dotenv = require("dotenv");
 const { validateRegistration, getUserByEmail, urlsForUser } = require('./helperFunctions');
+dotenv.config();
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = process.env.PORT || 8080; // default port 8080
+app.set('view engine', 'ejs');
+const salt = bcrypt.genSaltSync(10);
 
 const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: bcrypt.hashSync("purple-monkey-dinosaur", 10),
+    password: bcrypt.hashSync(process.env.USER1_PASSWORD, salt),
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: bcrypt.hashSync("dishwasher-funk", 10),
+    password: bcrypt.hashSync(process.env.USER2_PASSWORD, salt),
   },
   user3RandomID: {
     id: "user3RandomID",
     email: "pokemon@go.com",
-    password: bcrypt.hashSync("catchem", 10)
+    password: bcrypt.hashSync(process.env.USER3_PASSWORD, salt)
   }
 };
 
-app.set('view engine', 'ejs');
 
 app.use(cookieSession({
   name: 'session',
-  keys: ['key1', 'key2']
+  keys: [process.env.SESSION_KEY1, process.env.SESSION_KEY2]
 }));
 
 const urlDatabase = {
@@ -81,7 +84,7 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/login');
 });
 
@@ -92,7 +95,7 @@ app.post('/register', (req, res) => {
     return res.status(validation.status).send(validation.error);
   }
 
-    const hashedPassword = bcrypt.hashSync(password,10);
+    const hashedPassword = bcrypt.hashSync(password, 10);
     const userId = generateRandomString();
     users[userId] = { id: userId, email, password: hashedPassword }
     console.log(users);

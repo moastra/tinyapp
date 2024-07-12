@@ -1,22 +1,27 @@
+const bcrypt = require("bcryptjs");
+const dotenv = require("dotenv");
+dotenv.config();
+const salt = bcrypt.genSaltSync(10);
+
 const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcrypt.hashSync(process.env.USER1_PASSWORD, salt),
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync(process.env.USER2_PASSWORD, salt),
   },
   user3RandomID: {
     id: "user3RandomID",
     email: "pokemon@go.com",
-    password: "catchem"
+    password: bcrypt.hashSync(process.env.USER3_PASSWORD, salt)
   }
 };
 
-const getUserByEmail = (email) =>{
+const getUserByEmail = (email, users) => {
   for (const userId in users) {
     if (users[userId].email === email) {
       return users[userId];
