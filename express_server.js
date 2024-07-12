@@ -1,5 +1,5 @@
 const express = require('express');
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const { validateRegistration, getUserByEmail, urlsForUser } = require('./helperFunctions');
 const app = express();
@@ -9,22 +9,26 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10),
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("dishwasher-funk", 10),
   },
   user3RandomID: {
     id: "user3RandomID",
     email: "pokemon@go.com",
-    password: "catchem"
+    password: bcrypt.hashSync("catchem", 10)
   }
 };
 
 app.set('view engine', 'ejs');
-app.use(cookieParser());
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}));
 
 const urlDatabase = {
   b6UTxQ: {
@@ -55,7 +59,7 @@ function generateRandomString() {
 app.use(express.urlencoded({ extended: true }));
 
 app.post("/urls", (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = users[req.session.user_id];
   if (!user) {
     return res.status(401).send('You need to be logged in to shorten URLs.');
   }
@@ -72,7 +76,7 @@ app.post('/login', (req, res) => {
     return res.status(403).send('Wrong email or password used.')
   }
 
-  res.cookie('user_id', user.id);
+  req.session.user_id = user.id;
   res.redirect('/urls');
 });
 
@@ -87,20 +91,17 @@ app.post('/register', (req, res) => {
   if (validation.error) {
     return res.status(validation.status).send(validation.error);
   }
-  bcrypt.hash(password, 10, (err, hashedPassword) => {
-    if (err) {
-      return res.status(500).send('Internal server error!');
-    }
+
+    const hashedPassword = bcrypt.hashSync(password,10);
     const userId = generateRandomString();
     users[userId] = { id: userId, email, password: hashedPassword }
     console.log(users);
-    res.cookie('user_id', userId)
+    req.session.user_id = userId;
     res.redirect('/urls');
   });
-});
 
 app.post('/urls/:id/delete', (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = users[req.session.user_id];
   if (!user) {
     return res.status(401).send('Please log in to delete this URL.');
   }
@@ -119,7 +120,7 @@ app.post('/urls/:id/delete', (req, res) => {
 });
 
 app.post('/urls/:id', (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = users[req.session.user_id];
   if (!user) {
     return res.status(401).send('Please log in to update this URL.');
   }
@@ -142,7 +143,7 @@ app.get('/', (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = users[req.session.user_id];
   if (!user) {
     return res.status(401).send('Please log in or register first.');
   }
@@ -152,7 +153,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = getUserById(req.cookies.user_id);
+  const user = getUserById(req.session.user_id);
   if (!user) {
     return res.redirect('/login');
   }
@@ -161,7 +162,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = users[req.session.user_id];
   if (!user) {
     return res.status(401).send('Please log in to view.');
   }
@@ -193,7 +194,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = users[req.session.user_id];
   if (user) {
     return res.redirect('/urls');
   }
@@ -202,7 +203,7 @@ app.get('/register', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  const user = users[req.cookies.user_id];
+  const user = users[req.session.user_id];
   if (user) {
     return res.redirect('/urls');
   }
