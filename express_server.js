@@ -63,6 +63,11 @@ app.post('/register', (req, res) => {
   if (!email || !password) {
     return res.status(400).send('Email and/or password cannot be empty');
   }
+  for (let userId in users) {
+    if (users[userId].email === email) {
+      return res.status(400).send('Email already registered');
+    }
+  }
   const userId = generateRandomString();
   users[userId] = { id: userId, email, password }
   console.log(users);
