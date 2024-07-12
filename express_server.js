@@ -1,5 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
 const { validateRegistration, getUserByEmail, urlsForUser } = require('./helperFunctions');
 const app = express();
 const PORT = 8080; // default port 8080
@@ -67,7 +68,7 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const user = getUserByEmail(email, users);
 
-  if (!user || user.password !== password) {
+  if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.status(403).send('Wrong email or password used.')
   }
 
@@ -86,11 +87,16 @@ app.post('/register', (req, res) => {
   if (validation.error) {
     return res.status(validation.status).send(validation.error);
   }
-  const userId = generateRandomString();
-  users[userId] = { id: userId, email, password }
-  console.log(users);
-  res.cookie('user_id', userId)
-  res.redirect('/urls');
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
+    if (err) {
+      return res.status(500).send('Internal server error!');
+    }
+    const userId = generateRandomString();
+    users[userId] = { id: userId, email, password: hashedPassword }
+    console.log(users);
+    res.cookie('user_id', userId)
+    res.redirect('/urls');
+  });
 });
 
 app.post('/urls/:id/delete', (req, res) => {

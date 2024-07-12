@@ -36,7 +36,7 @@ const validateRegistration = (email, password) => {
   return { error: null, status: 200 };
 };
 
-const urlsForUser = (id) => {
+const urlsForUser = (id, urlDatabase) => {
   const userURLs = {};
   for (const shortURL in urlDatabase) {
     if (urlDatabase[shortURL].userID ===id) {
