@@ -1,6 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { validateRegistration } = require('./helperFunctions');
+const { validateRegistration, getUserByEmail } = require('./helperFunctions');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -15,6 +15,11 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
+  user3RandomID: {
+    id: "user3RandomID",
+    email: "pokemon@go.com",
+    password: "catchem"
+  }
 };
 
 app.set('view engine', 'ejs');
@@ -48,14 +53,20 @@ app.post("/urls", (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  const username = req.body.username;
-  res.cookie('user_id', username);
+  const { email, password } = req.body;
+  const user = getUserByEmail(email, users);
+
+  if (!user || user.password !== password) {
+    return res.status(403).send('Wrong email or password used.')
+  }
+
+  res.cookie('user_id', user.id);
   res.redirect('/urls');
 });
 
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 app.post('/register', (req, res) => {
@@ -89,7 +100,7 @@ app.get('/', (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const user = getUserById(req.cookies.user_id);
+  const user = users[req.cookies.user_id];
   const templateVars = { urls: urlDatabase, user };
   res.render("urls_index", templateVars);
 });
@@ -116,11 +127,15 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  res.render('register');
+  const user = users[req.cookies.user_id];
+  const templateVars = { user };
+  res.render('register', templateVars);
 });
 
 app.get('/login', (req, res) => {
-  res.render('login');
+  const user = users[req.cookies.user_id];
+  const templateVars = { user };
+  res.render('login', templateVars);
 });
 
 app.listen(PORT, () => {
