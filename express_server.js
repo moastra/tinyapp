@@ -26,9 +26,16 @@ app.set('view engine', 'ejs');
 app.use(cookieParser());
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
+
 
 const getUserById = (userId) => {
   return users[userId];
@@ -52,7 +59,7 @@ app.post("/urls", (req, res) => {
     return res.status(401).send('You need to be logged in to shorten URLs.');
   }
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: user.id };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -95,7 +102,7 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   const longURL = req.body.longURL;
-  urlDatabase[id] = longURL;
+  urlDatabase[id].longURL = longURL;
   res.redirect('/urls');
 });
 
@@ -120,16 +127,16 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const user = getUserById(req.cookies.user_id);
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
-  const longURL = urlDatabase[shortURL];
+  const urlData = urlDatabase[shortURL];
 
-  if (longURL) {
-    res.redirect(longURL);
+  if (urlData) {
+    res.redirect(urlData.longURL);
   } else {
     res.status(404).send('<h1>404 - Not Found</h1><p>The short URL you are trying to access does not exist.</p>');
   }
