@@ -47,6 +47,10 @@ function generateRandomString() {
 app.use(express.urlencoded({ extended: true }));
 
 app.post("/urls", (req, res) => {
+  const user = users[req.cookies.user_id];
+  if (!user) {
+    return res.status(401).send('You need to be logged in to shorten URLs.');
+  }
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
@@ -107,6 +111,9 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const user = getUserById(req.cookies.user_id);
+  if (!user) {
+    return res.redirect('/login');
+  }
   const templateVars = { user };
   res.render("urls_new", templateVars);
 });
@@ -118,22 +125,30 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const shortURL = req.params.id;
+  const longURL = urlDatabase[shortURL];
+
   if (longURL) {
     res.redirect(longURL);
   } else {
-    res.status(404).send('URL not found');
+    res.status(404).send('<h1>404 - Not Found</h1><p>The short URL you are trying to access does not exist.</p>');
   }
 });
 
 app.get('/register', (req, res) => {
   const user = users[req.cookies.user_id];
+  if (user) {
+    return res.redirect('/urls');
+  }
   const templateVars = { user };
   res.render('register', templateVars);
 });
 
 app.get('/login', (req, res) => {
   const user = users[req.cookies.user_id];
+  if (user) {
+    return res.redirect('/urls');
+  }
   const templateVars = { user };
   res.render('login', templateVars);
 });
