@@ -1,5 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const { validateRegistration } = require('./helperFunctions');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -15,7 +16,6 @@ const users = {
     password: "dishwasher-funk",
   },
 };
-
 
 app.set('view engine', 'ejs');
 app.use(cookieParser());
@@ -60,13 +60,9 @@ app.post('/logout', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).send('Email and/or password cannot be empty');
-  }
-  for (let userId in users) {
-    if (users[userId].email === email) {
-      return res.status(400).send('Email already registered');
-    }
+  const validation = validateRegistration(email, password);
+  if (validation.error) {
+    return res.status(validation.status).send(validation.error);
   }
   const userId = generateRandomString();
   users[userId] = { id: userId, email, password }
@@ -121,6 +117,10 @@ app.get("/u/:id", (req, res) => {
 
 app.get('/register', (req, res) => {
   res.render('register');
+});
+
+app.get('/login', (req, res) => {
+  res.render('login');
 });
 
 app.listen(PORT, () => {
