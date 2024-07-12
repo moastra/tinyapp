@@ -1,6 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { validateRegistration, getUserByEmail } = require('./helperFunctions');
+const { validateRegistration, getUserByEmail, urlsForUser } = require('./helperFunctions');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -94,15 +94,40 @@ app.post('/register', (req, res) => {
 });
 
 app.post('/urls/:id/delete', (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
+  const user = users[req.cookies.user_id];
+  if (!user) {
+    return res.status(401).send('Please log in to delete this URL.');
+  }
+
+  const url = urlDatabase[req.params.id];
+  if (!url) {
+    return res.status (404).send('URL not found.');
+  }
+
+  if (url.userID !== user.id) {
+    return res.status(403).send('You do not have access to delete this URL.')
+  }
+
+  delete urlDatabase[req.params.id];
   res.redirect('/urls');
 });
 
 app.post('/urls/:id', (req, res) => {
-  const id = req.params.id;
-  const longURL = req.body.longURL;
-  urlDatabase[id].longURL = longURL;
+  const user = users[req.cookies.user_id];
+  if (!user) {
+    return res.status(401).send('Please log in to update this URL.');
+  }
+
+  const url = urlDatabase[req.params.id];
+  if (!url) {
+    return res.status (404).send('URL not found.');
+  }
+
+  if (url.userID !== user.id) {
+    return res.status(403).send('You do not have access to update this URL.')
+  }
+
+  urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect('/urls');
 });
 
@@ -112,7 +137,11 @@ app.get('/', (req, res) => {
 
 app.get("/urls", (req, res) => {
   const user = users[req.cookies.user_id];
-  const templateVars = { urls: urlDatabase, user };
+  if (!user) {
+    return res.status(401).send('Please log in or register first.');
+  }
+  const userURLs = urlsForUser(user.id);
+  const templateVars = { urls: userURLs, user };
   res.render("urls_index", templateVars);
 });
 
@@ -126,20 +155,35 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const user = getUserById(req.cookies.user_id);
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user };
+  const user = users[req.cookies.user_id];
+  if (!user) {
+    return res.status(401).send('Please log in to view.');
+  }
+  const url = urlDatabase[req.params.id];
+
+  if (!url) {
+    return res.status(404).send('URL not found.');
+  }
+
+  if (url.userID !== user.id) {
+    return res.status(403).send('You do not have permission to view this URL.');
+  }
+  const templateVars = { id: req.params.id, longURL: url.longURL, user };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
   const urlData = urlDatabase[shortURL];
+  const longURL = urlData.longURL;
 
   if (urlData) {
     res.redirect(urlData.longURL);
   } else {
     res.status(404).send('<h1>404 - Not Found</h1><p>The short URL you are trying to access does not exist.</p>');
   }
+
+  res.redirect(longURL);
 });
 
 app.get('/register', (req, res) => {

@@ -36,9 +36,19 @@ const validateRegistration = (email, password) => {
   return { error: null, status: 200 };
 };
 
+const urlsForUser = (id) => {
+  const userURLs = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID ===id) {
+      userURLs[shortURL] = urlDatabase[shortURL];
+    }
+  }
 
+  return userURLs;
+}
 
 module.exports = {
   validateRegistration,
-  getUserByEmail
+  getUserByEmail,
+  urlsForUser
 };
