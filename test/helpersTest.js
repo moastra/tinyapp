@@ -21,7 +21,7 @@ describe('getUserByEmail', function() {
     assert.strictEqual(user.id, expectedUserID);
   });
 
-  it('should return undefined for an invalid emai', function() {
+  it('should return undefined for an invalid email', function() {
     const user = getUserByEmail('fakeuser@example.com', testUsers)
     assert.isUndefined(user);
   });
