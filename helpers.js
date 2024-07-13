@@ -27,7 +27,7 @@ const getUserByEmail = (email, users) => {
       return users[userId];
     }
   }
-  return null;
+  return undefined;
 }
 
 const validateRegistration = (email, password) => {

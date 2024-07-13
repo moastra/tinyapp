@@ -2,7 +2,7 @@ const express = require('express');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const dotenv = require("dotenv");
-const { validateRegistration, getUserByEmail, urlsForUser } = require('./helperFunctions');
+const { validateRegistration, getUserByEmail, urlsForUser } = require('./helpers');
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
