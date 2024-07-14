@@ -10,14 +10,14 @@ const getUserByEmail = (email, users) => {
     }
   }
   return undefined;
-}
+};
 
 const validateRegistration = (email, password) => {
   if (!email || !password) {
     return { error: 'Email and/or password cannot be empty', status: 400 };
   }
   if (getUserByEmail(email, users)) {
-      return { error: 'Email already registered', status: 400 };
+    return { error: 'Email already registered', status: 400 };
   }
 
   return { error: null, status: 200 };
@@ -32,7 +32,7 @@ const urlsForUser = (id, urlDatabase) => {
   }
 
   return userURLs;
-}
+};
 
 module.exports = {
   validateRegistration,

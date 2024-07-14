@@ -39,10 +39,16 @@ const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "aJ48lW",
+    visitCount: 0,
+    uniqueVisits: new Set(),
+    visitHistory: []
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "aJ48lW",
+    visitCount: 0,
+    uniqueVisits: new Set(),
+    visitHistory: []
   },
 };
 
@@ -55,9 +61,16 @@ function generateRandomString() {
     result += characters[randomIndex];
   }
   return result;
-};
+}
 
 app.use(express.urlencoded({ extended: true }));
+
+app.use((req, res, next) =>{
+  if (!req.session.visitor_id) {
+    req.session.visitor_id = generateRandomString();
+  }
+  next();
+});
 
 app.post("/urls", (req, res) => {
   const user = users[req.session.user_id];
@@ -74,7 +87,7 @@ app.post('/login', (req, res) => {
   const user = getUserByEmail(email, users);
 
   if (!user || !bcrypt.compareSync(password, user.password)) {
-    return res.status(403).send('Wrong email or password used.')
+    return res.status(403).send('Wrong email or password used.');
   }
 
   req.session.user_id = user.id;
@@ -93,13 +106,13 @@ app.post('/register', (req, res) => {
     return res.status(validation.status).send(validation.error);
   }
 
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    const userId = generateRandomString();
-    users[userId] = { id: userId, email, password: hashedPassword }
-    console.log(users);
-    req.session.user_id = userId;
-    res.redirect('/urls');
-  });
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const userId = generateRandomString();
+  users[userId] = { id: userId, email, password: hashedPassword };
+  console.log(users);
+  req.session.user_id = userId;
+  res.redirect('/urls');
+});
 
 app.delete('/urls/:id', (req, res) => {
   const user = users[req.session.user_id];
@@ -109,11 +122,11 @@ app.delete('/urls/:id', (req, res) => {
 
   const url = urlDatabase[req.params.id];
   if (!url) {
-    return res.status (404).send('URL not found.');
+    return res.status(404).send('URL not found.');
   }
 
   if (url.userID !== user.id) {
-    return res.status(403).send('You do not have access to delete this URL.')
+    return res.status(403).send('You do not have access to delete this URL.');
   }
 
   delete urlDatabase[req.params.id];
@@ -128,11 +141,11 @@ app.put('/urls/:id', (req, res) => {
 
   const url = urlDatabase[req.params.id];
   if (!url) {
-    return res.status (404).send('URL not found.');
+    return res.status(404).send('URL not found.');
   }
 
   if (url.userID !== user.id) {
-    return res.status(403).send('You do not have access to update this URL.')
+    return res.status(403).send('You do not have access to update this URL.');
   }
 
   urlDatabase[req.params.id].longURL = req.body.longURL;
@@ -176,7 +189,16 @@ app.get("/urls/:id", (req, res) => {
   if (url.userID !== user.id) {
     return res.status(403).send('You do not have permission to view this URL.');
   }
-  const templateVars = { id: req.params.id, longURL: url.longURL, user };
+  
+  const templateVars = {
+    id: req.params.id,
+    longURL: url.longURL,
+    user,
+    visitCount: url.visitCount,
+    uniqueVisits: url.uniqueVisits.size,
+    visitHistory: url.visitHistory
+  };
+
   res.render("urls_show", templateVars);
 });
 
@@ -190,6 +212,10 @@ app.get("/u/:id", (req, res) => {
   } else {
     res.status(404).send('<h1>404 - Not Found</h1><p>The short URL you are trying to access does not exist.</p>');
   }
+
+  urlData.visitCount++;
+  urlData.uniqueVisits.add(req.session.visitor_id);
+  urlData.visitHistory.push({ timestamp: new Date(), visitor_id: req.session.visitor_id});
 
   res.redirect(longURL);
 });
