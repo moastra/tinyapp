@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
 app.set('view engine', 'ejs');
 const salt = bcrypt.genSaltSync(10);
+const methodOverride = require('method-override');
 
 const users = {
   userRandomID: {
@@ -27,6 +28,7 @@ const users = {
   }
 };
 
+app.use(methodOverride('_method'));
 
 app.use(cookieSession({
   name: 'session',
@@ -44,10 +46,6 @@ const urlDatabase = {
   },
 };
 
-
-const getUserById = (userId) => {
-  return users[userId];
-}
 
 function generateRandomString() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -103,7 +101,7 @@ app.post('/register', (req, res) => {
     res.redirect('/urls');
   });
 
-app.post('/urls/:id/delete', (req, res) => {
+app.delete('/urls/:id', (req, res) => {
   const user = users[req.session.user_id];
   if (!user) {
     return res.status(401).send('Please log in to delete this URL.');
@@ -122,7 +120,7 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-app.post('/urls/:id', (req, res) => {
+app.put('/urls/:id', (req, res) => {
   const user = users[req.session.user_id];
   if (!user) {
     return res.status(401).send('Please log in to update this URL.');
