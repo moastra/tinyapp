@@ -2,7 +2,7 @@ const express = require('express');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const dotenv = require("dotenv");
-const { validateRegistration, getUserByEmail, urlsForUser } = require('./helpers');
+const { users, validateRegistration, getUserByEmail, urlsForUser, getUserById } = require('./helpers');
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
@@ -10,23 +10,6 @@ app.set('view engine', 'ejs');
 const salt = bcrypt.genSaltSync(10);
 const methodOverride = require('method-override');
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: bcrypt.hashSync(process.env.USER1_PASSWORD, salt),
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: bcrypt.hashSync(process.env.USER2_PASSWORD, salt),
-  },
-  user3RandomID: {
-    id: "user3RandomID",
-    email: "pokemon@go.com",
-    password: bcrypt.hashSync(process.env.USER3_PASSWORD, salt)
-  }
-};
 
 app.use(methodOverride('_method'));
 
@@ -73,12 +56,22 @@ app.use((req, res, next) =>{
 });
 
 app.post("/urls", (req, res) => {
-  const user = users[req.session.user_id];
-  if (!user) {
+  const userID = req.session.user_id;
+  if (!userID) {
     return res.status(401).send('You need to be logged in to shorten URLs.');
   }
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: user.id };
+  const longURL = req.body.longURL;
+
+
+  urlDatabase[shortURL] = {
+    longURL: longURL,
+    userID: userID,
+    visitCount: 0,
+    uniqueVisits: new Set(),
+    visitHistory: []
+   };
+
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -109,8 +102,13 @@ app.post('/register', (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, 10);
   const userId = generateRandomString();
   users[userId] = { id: userId, email, password: hashedPassword };
-  console.log(users);
+
+
   req.session.user_id = userId;
+
+  console.log('Updated users object: ', users);
+  console.log("Registered user: ", users[userId]);
+  console.log("Session after registration: ", req.session);
   res.redirect('/urls');
 });
 
@@ -161,13 +159,17 @@ app.get("/urls", (req, res) => {
   if (!user) {
     return res.status(401).send('Please log in or register first.');
   }
-  const userURLs = urlsForUser(user.id);
+  const userURLs = urlsForUser(user.id, urlDatabase);
   const templateVars = { urls: userURLs, user };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
   const user = getUserById(req.session.user_id);
+
+  console.log("Session user ID while accessing /urls/new: ", req.session.user_id);
+  console.log("User found from session: ", user);
+
   if (!user) {
     return res.redirect('/login');
   }
@@ -189,14 +191,16 @@ app.get("/urls/:id", (req, res) => {
   if (url.userID !== user.id) {
     return res.status(403).send('You do not have permission to view this URL.');
   }
+
+  const visitHistory = url.visitHistory || [];
   
   const templateVars = {
     id: req.params.id,
     longURL: url.longURL,
     user,
     visitCount: url.visitCount,
-    uniqueVisits: url.uniqueVisits.size,
-    visitHistory: url.visitHistory
+    uniqueVisits: url.uniqueVisits ? url.uniqueVisits.size: 0,
+    visitHistory
   };
 
   res.render("urls_show", templateVars);
