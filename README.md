@@ -13,8 +13,12 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["screenshot description"](#)
-!["screenshot description"](#)
+!["Screenshot of the Login Page"](https://github.com/moastra/tinyapp/blob/main/docs/login-page.png?raw=true)
+!["screenshot of the Register Page"](https://github.com/moastra/tinyapp/blob/main/docs/register-page.png?raw=true)
+!["screenshot of the MyURLs Page"](https://github.com/moastra/tinyapp/blob/main/docs/my-urls-page.png?raw=true)
+!["screenshot of Create URLs Page"](https://github.com/moastra/tinyapp/blob/main/docs/create-url-page.png?raw=true)
+!["screenshot of the Edit URLs Page"](https://github.com/moastra/tinyapp/blob/main/docs/edit-url-page.png?raw=true)
+
 
 ## Dependencies
 
