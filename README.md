@@ -30,7 +30,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 - Install all dependencies (using the `npm install <dependency>` command).
 - Run the development web server using the `npm start` command once nodemon is installed.
-- Open your browser and navigate to [http://localhost:8080/register].
+- Open your browser and navigate to [http://localhost:8080/register](http://localhost:8080/register).
 
 ## Usage
 
