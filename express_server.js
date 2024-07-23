@@ -151,7 +151,12 @@ app.put('/urls/:id', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Hello!');
+  const user = users[req.session.user_id];
+  if (user) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get("/urls", (req, res) => {
